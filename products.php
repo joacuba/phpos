@@ -20,9 +20,25 @@ $result = $conn->query($sql);
 
 if ($result && $result->num_rows > 0) {
     echo "<h2>Productos: </h2>";
-    while($row = $result->fetch_assoc()) {
-        echo "Row: " . json_encode($row) . "<br>";
+    echo "<table border='1' cellpadding='10'>";
+    
+    // Output column headers
+    echo "<tr>";
+    while ($fieldinfo = $result->fetch_field()) {
+        echo "<th>" . htmlspecialchars($fieldinfo->name) . "</th>";
     }
+    echo "</tr>";
+
+    // Output rows
+    while($row = $result->fetch_assoc()) {
+        echo "<tr>";
+        foreach ($row as $cell) {
+            echo "<td>" . htmlspecialchars($cell) . "</td>";
+        }
+        echo "</tr>";
+    }
+    
+    echo "</table>";
 } else {
     echo "0 results";
 }
