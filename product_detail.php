@@ -1,36 +1,54 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Database connection
 $servername = "localhost";
-$username = "your_username";
-$password = "your_password";
-$dbname = "your_database";
+$username = "root";  // Your database username
+$password = "";      // Your database password
+$dbname = "tienda";  // Your database name
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+try {
+    $conn = new mysqli($servername, $username, $password, $dbname);
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+    if ($conn->connect_error) {
+        throw new Exception("Connection failed: " . $conn->connect_error);
+    }
 
-// Get product ID from URL
-$product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    // Get product ID from URL and validate it
+    $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Query for specific product
-$sql = "SELECT * FROM Producto WHERE id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $product_id);
-$stmt->execute();
-$result = $stmt->get_result();
+    if ($product_id <= 0) {
+        throw new Exception("Invalid product ID");
+    }
 
-if ($result && $result->num_rows > 0) {
-    $product = $result->fetch_assoc();
+    // Query for specific product
+    $sql = "SELECT * FROM Producto WHERE id = ?";
+    $stmt = $conn->prepare($sql);
     
-    // Generate image URLs based on product category
-    $mainImage = "https://source.unsplash.com/800x600/?" . urlencode($product['nombre']);
-    $galleryImages = [
-        "https://source.unsplash.com/400x300/?" . urlencode($product['nombre'] . " 1"),
-        "https://source.unsplash.com/400x300/?" . urlencode($product['nombre'] . " 2"),
-        "https://source.unsplash.com/400x300/?" . urlencode($product['nombre'] . " 3")
-    ];
+    if (!$stmt) {
+        throw new Exception("Prepare failed: " . $conn->error);
+    }
+
+    $stmt->bind_param("i", $product_id);
+    
+    if (!$stmt->execute()) {
+        throw new Exception("Execute failed: " . $stmt->error);
+    }
+
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows > 0) {
+        $product = $result->fetch_assoc();
+        
+        // Generate image URLs based on product category
+        $mainImage = "https://source.unsplash.com/800x600/?" . urlencode($product['nombre']);
+        $galleryImages = [
+            "https://source.unsplash.com/400x300/?" . urlencode($product['nombre'] . " 1"),
+            "https://source.unsplash.com/400x300/?" . urlencode($product['nombre'] . " 2"),
+            "https://source.unsplash.com/400x300/?" . urlencode($product['nombre'] . " 3")
+        ];
 ?>
 
 <!DOCTYPE html>
@@ -222,9 +240,18 @@ if ($result && $result->num_rows > 0) {
 </html>
 
 <?php
-} else {
-    echo "<p>Producto no encontrado</p>";
-}
+    } else {
+        echo "<div class='container'><p>Producto no encontrado</p></div>";
+    }
 
-$conn->close();
+} catch (Exception $e) {
+    // Log the error and show a user-friendly message
+    error_log("Error in product_detail.php: " . $e->getMessage());
+    echo "<div class='container'><p>Lo sentimos, ha ocurrido un error. Por favor, intente más tarde.</p></div>";
+} finally {
+    // Close the database connection
+    if (isset($conn)) {
+        $conn->close();
+    }
+}
 ?> 

@@ -1,4 +1,4 @@
-<?php
+1<?php
 $servername = "mysql_vm_ip";
 $username = "your_user";
 $password = "your_password";
