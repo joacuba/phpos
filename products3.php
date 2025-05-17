@@ -61,35 +61,41 @@ $result = $conn->query($sql);
 if ($result && $result->num_rows > 0) {
     echo "<div class='products-container'>";
     echo "<h2>Productos</h2>";
-    echo "<table class='products-table'>";
+    echo "<div class='products-grid'>";
     
-    // Output column headers
-    echo "<thead><tr>";
-    while ($fieldinfo = $result->fetch_field()) {
-        echo "<th>" . htmlspecialchars($fieldinfo->name) . "</th>";
-    }
-    echo "</tr></thead><tbody>";
-
     // Output rows
     while($row = $result->fetch_assoc()) {
-        echo "<tr>";
-        foreach ($row as $key => $cell) {
-            // Format price column
-            if ($key === 'precio') {
-                echo "<td class='price'>$" . number_format($cell, 2) . "</td>";
-            }
-            // Format date column
-            else if ($key === 'fecha_creacion') {
-                echo "<td class='date'>" . date('d/m/Y H:i', strtotime($cell)) . "</td>";
-            }
-            else {
-                echo "<td>" . htmlspecialchars($cell) . "</td>";
-            }
-        }
-        echo "</tr>";
+        $imageUrl = "https://source.unsplash.com/300x300/?" . urlencode($row['nombre']);
+        ?>
+        <div class="product-card">
+            <a href="product_detail.php?id=<?php echo $row['id']; ?>" class="product-link">
+                <div class="product-image">
+                    <img src="<?php echo $imageUrl; ?>" alt="<?php echo htmlspecialchars($row['nombre']); ?>">
+                </div>
+                <div class="product-info">
+                    <h3><?php echo htmlspecialchars($row['nombre']); ?></h3>
+                    <p class="description"><?php echo htmlspecialchars($row['descripcion']); ?></p>
+                    <div class="product-details">
+                        <span class="price">$<?php echo number_format($row['precio'], 2); ?></span>
+                        <span class="stock">Stock: <?php echo $row['stock']; ?></span>
+                    </div>
+                </div>
+            </a>
+            <div class="product-actions">
+                <form method="POST" class="cart-form">
+                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
+                    <div class="quantity-wrapper">
+                        <input type="number" name="quantity" value="1" min="1" max="<?php echo $row['stock']; ?>" class="quantity-input">
+                        <button type="submit" class="add-to-cart-btn">Agregar al carrito</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <?php
     }
     
-    echo "</tbody></table></div>";
+    echo "</div></div>";
 } else {
     echo "<p class='no-results'>No se encontraron productos</p>";
 }
@@ -101,31 +107,108 @@ echo "<style>
         margin: 20px auto;
         padding: 20px;
     }
-    .products-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
+    .products-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .product-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
         background: white;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        width: calc(33.33% - 20px);
     }
-    .products-table th {
-        background: #f4f4f4;
-        padding: 12px;
-        text-align: left;
+    .product-link {
+        text-decoration: none;
+        color: inherit;
+        flex-grow: 1;
+        padding: 15px;
+    }
+    .product-actions {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        background: #f8f9fa;
+    }
+    .quantity-wrapper {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .quantity-input {
+        width: 60px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .add-to-cart-btn {
+        flex-grow: 1;
+        padding: 8px 15px;
+        background: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
         font-weight: bold;
+        transition: background 0.3s ease;
     }
-    .products-table td {
-        padding: 12px;
-        border-bottom: 1px solid #ddd;
+    .add-to-cart-btn:hover {
+        background: #27ae60;
     }
-    .products-table tr:hover {
-        background: #f9f9f9;
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .product-image {
+        position: relative;
+        padding-top: 100%;
+        overflow: hidden;
+    }
+    .product-image img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .product-card:hover .product-image img {
+        transform: scale(1.05);
+    }
+    .product-info {
+        padding: 15px 0;
+    }
+    .product-info h3 {
+        margin: 0 0 10px 0;
+        font-size: 1.2em;
+        color: #333;
+    }
+    .description {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .product-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .price {
-        font-weight: bold;
         color: #2ecc71;
+        font-weight: bold;
+        font-size: 1.2em;
     }
-    .date {
+    .stock {
         color: #666;
         font-size: 0.9em;
     }
